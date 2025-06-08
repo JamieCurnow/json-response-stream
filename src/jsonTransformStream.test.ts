@@ -149,4 +149,26 @@ describe('jsonTransformStream', () => {
 
     expect(result).toEqual([{ name: 'John' }])
   })
+
+  it('should handle very small chunks', async () => {
+    const jsonString = '{"message": "hello world"}'
+    const chunks = jsonString.split('').map(char => char) // Split into single characters
+
+    const stream = createReadableStream(chunks)
+    const result = await readAllFromStream(stream.pipeThrough(jsonTransformStream<{ message: string }>()))
+
+    expect(result).toEqual([{ message: 'hello world' }])
+  })
+
+  it('should handle multiple objects with whitespace between them', async () => {
+    const stream = createReadableStream(['{"id": 1}   \n\t  {"id": 2}  {"id": 3}'])
+
+    const result = await readAllFromStream(stream.pipeThrough(jsonTransformStream<{ id: number }>()))
+
+    expect(result).toEqual([
+      { id: 1 },
+      { id: 2 },
+      { id: 3 }
+    ])
+  })
 })
